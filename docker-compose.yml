@@ -1,0 +1,40 @@
+version: "2"
+services:
+  nginx:
+      # используем последний стабильный образ nginx
+        image: nginx:latest
+        # маршрутизируем порты
+        ports:
+            - "8000:80"
+        # монтируем директории, слева директории на основной машине, справа - куда они монтируются в контейнере
+        volumes:
+            - ./hosts:/etc/nginx/conf.d
+            - ./www:/var/www
+            - ./logs:/var/log/nginx
+        # nginx должен общаться с php контейнером
+        links:
+            - php
+            - pma:phpmyadmin
+  php:
+    build: ./images/php
+    links:
+      - mysql
+    volumes:
+      - ./www:/var/www
+  mysql:
+    image: mariadb
+    ports:
+      - 33066:3306
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+  pma:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    ports:
+      - 8183:80
+    environment:
+      PMA_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: secret
